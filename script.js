@@ -30,19 +30,21 @@ const createCards = () => {
     randomizedCards.push(card);
   });
 
-  randomizedCards.sort(() => Math.random() - 0.5);
+  randomizedCards.sort(() => Math.random() - 0.5); // Randomize the order of cards
 
   randomizedCards.forEach(card => {
     const duplicateCard = createCard(card.dataset.pokemonId);
     randomizedCards.push(duplicateCard);
   });
 
+  randomizedCards.sort(() => Math.random() - 0.5); // Randomize the order again
+
   randomizedCards.forEach(card => {
     gameGrid.appendChild(card);
     cards.push(card);
   });
 
-  pairsLeft = totalPairs;
+  pairsLeft = totalPairs; // Update the number of pairs left
   document.getElementById('pairs-left').textContent = `Pairs Left: ${pairsLeft}`;
   document.getElementById('total-pairs').textContent = `Total Pairs: ${totalPairs}`;
 };
@@ -82,9 +84,12 @@ const fetchPokemonImage = async (pokemonId, frontFace) => {
 };
 
 const fetchMaxPokemonId = async () => {
-  const response = await fetch(`${pokeApiBaseUrl}/pokemon`);
+  const response = await fetch(`${pokeApiBaseUrl}/pokemon-species?limit=1`);
   const data = await response.json();
-  maxPokemonId = data.count;
+  const maxSpeciesId = data.count;
+  const pokemonResponse = await fetch(`${pokeApiBaseUrl}/pokemon/${maxSpeciesId}`);
+  const pokemonData = await pokemonResponse.json();
+  maxPokemonId = pokemonData.id;
 };
 
 const getRandomPokemonId = () => {
@@ -138,9 +143,6 @@ const handleCardClick = () => {
       firstCard.removeEventListener('click', handleCardClick);
       secondCard.removeEventListener('click', handleCardClick);
 
-      firstCard.classList.add('matched');
-      secondCard.classList.add('matched');
-
       if (pairsMatched === totalPairs) {
         clearInterval(timerId);
         timerId = undefined;
@@ -165,7 +167,14 @@ const isMatch = () => {
   // Retrieve the Pokémon ID from the data attribute
   const firstCardPokemonId = parseInt(firstCard.dataset.pokemonId); 
   const secondCardPokemonId = parseInt(secondCard.dataset.pokemonId);
-  return firstCardPokemonId === secondCardPokemonId;
+  const match = firstCardPokemonId === secondCardPokemonId;
+
+  if (match) {
+    firstCard.classList.add('flip');
+    secondCard.classList.add('flip');
+  }
+
+  return match;
 };
 
 const resetSelectedCards = () => {
@@ -198,11 +207,11 @@ const handleStartButtonClick = () => {
   resetGame();
 
   if (difficulty === 'easy') {
-    totalPairs = 3;
-  } else if (difficulty === 'medium') {
     totalPairs = 4;
+  } else if (difficulty === 'medium') {
+    totalPairs = 6;
   } else if (difficulty === 'hard') {
-    totalPairs = 5;
+    totalPairs = 10;
   }
 
   document.getElementById('game-grid').style.display = 'flex'; 
@@ -222,7 +231,8 @@ const resetGame = () => {
   clicks = 0;
   pairsLeft = totalPairs;
   pairsMatched = 0;
-
+  
+  document.getElementById('game-grid').style.display = 'none'; 
   document.getElementById('clicks').textContent = `Clicks: ${clicks}`;
   document.getElementById('pairs-left').textContent = `Pairs Left: ${pairsLeft}`;
   document.getElementById('pairs-matched').textContent = `Pairs Matched: ${pairsMatched}`;
@@ -239,11 +249,11 @@ const handleDifficultyChange = event => {
   difficulty = event.target.value;
 
   if (difficulty === 'easy') {
-    totalPairs = 3;
-  } else if (difficulty === 'medium') {
     totalPairs = 4;
+  } else if (difficulty === 'medium') {
+    totalPairs = 6;
   } else if (difficulty === 'hard') {
-    totalPairs = 5;
+    totalPairs = 10;
   }
 
   // Enable the start button after selecting difficulty
