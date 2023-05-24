@@ -9,6 +9,11 @@ let pairsMatched = 0;
 let totalPairs = 0;
 let timerId;
 let time = 0;
+let gameLost = false;
+// Time Limit Variables in Seconds
+let easyTimeLimit = 60;      
+let mediumTimeLimit = 45;    
+let hardTimeLimit = 30;    
 let difficulty = 'easy';
 let theme = 'light';
 
@@ -112,6 +117,10 @@ const addEventListeners = () => {
 };
 
 const handleCardClick = () => {
+  if (timerId === undefined || gameLost) {
+    return;
+  }
+
   if (timerId === undefined) {
     timerId = setInterval(updateTimer, 1000);
   }
@@ -122,6 +131,10 @@ const handleCardClick = () => {
   }
 
   if (clickedCard === firstCard || clickedCard === secondCard) {
+    return;
+  }
+
+  if (firstCard && secondCard) {
     return;
   }
 
@@ -183,10 +196,16 @@ const resetSelectedCards = () => {
 };
 
 const updateTimer = () => {
-  time++;
+  time--;
   const minutes = Math.floor(time / 60);
   const seconds = time % 60;
   document.getElementById('timer').textContent = `Time: ${formatTime(minutes)}:${formatTime(seconds)}`;
+
+  if (time === 0) {
+    clearInterval(timerId);
+    timerId = undefined;
+    displayLosingMessage();
+  }
 };
 
 const formatTime = time => {
@@ -200,6 +219,20 @@ const displayWinningMessage = () => {
   message.classList.add('win');
 };
 
+const displayLosingMessage = () => {
+  gameLost = true;
+
+  const message = document.getElementById('message');
+  message.textContent = 'Time is up! You lost the game.';
+  message.classList.remove('win');
+  message.classList.add('loss');
+
+  // Disable interaction with the cards
+  cards.forEach(card => {
+    card.removeEventListener('click', handleCardClick);
+  });
+};
+
 const handleStartButtonClick = () => {
   // Disable the start button after clicking
   document.getElementById('start-btn').disabled = true; 
@@ -208,16 +241,21 @@ const handleStartButtonClick = () => {
 
   if (difficulty === 'easy') {
     totalPairs = 4;
+    time = easyTimeLimit;
   } else if (difficulty === 'medium') {
     totalPairs = 6;
+    time = mediumTimeLimit;
   } else if (difficulty === 'hard') {
     totalPairs = 10;
+    time = hardTimeLimit;
   }
 
   document.getElementById('game-grid').style.display = 'flex'; 
 
   createCards();
   addEventListeners();
+
+  timerId = setInterval(updateTimer, 1000);
 };
 
 const handleResetButtonClick = () => {
@@ -231,6 +269,7 @@ const resetGame = () => {
   clicks = 0;
   pairsLeft = totalPairs;
   pairsMatched = 0;
+  gameLost = false;
   
   document.getElementById('game-grid').style.display = 'none'; 
   document.getElementById('clicks').textContent = `Clicks: ${clicks}`;
