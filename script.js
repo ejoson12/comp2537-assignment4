@@ -1,3 +1,4 @@
+// Variables declaration
 const pokeApiBaseUrl = 'https://pokeapi.co/api/v2';
 let cards = [];
 let firstCard = null;
@@ -11,18 +12,21 @@ let timerId;
 let time = 0;
 let gameLost = false;
 // Time Limit Variables in Seconds
-let easyTimeLimit = 60;      
-let mediumTimeLimit = 45;    
-let hardTimeLimit = 30;    
+let easyTimeLimit = 90;      
+let mediumTimeLimit = 75;    
+let hardTimeLimit = 60;
+// Default difficulty and theme    
 let difficulty = 'easy';
 let theme = 'light';
 
+// Setup the game
 const setup = async () => {
   await fetchMaxPokemonId();
   createCards();
   addEventListeners();
 };
 
+// Create cards and add them to the game grid
 const createCards = () => {
   const gameGrid = document.getElementById('game-grid');
   gameGrid.innerHTML = '';
@@ -30,6 +34,7 @@ const createCards = () => {
   const uniquePokemons = getRandomUniquePokemons(totalPairs);
   const randomizedCards = [];
 
+  // Create initial cards for uniquePokemons
   uniquePokemons.forEach(pokemonId => {
     const card = createCard(pokemonId);
     randomizedCards.push(card);
@@ -37,6 +42,7 @@ const createCards = () => {
 
   randomizedCards.sort(() => Math.random() - 0.5); // Randomize the order of cards
 
+  // Create matching cards for uniquePokemons
   randomizedCards.forEach(card => {
     const duplicateCard = createCard(card.dataset.pokemonId);
     randomizedCards.push(duplicateCard);
@@ -54,6 +60,7 @@ const createCards = () => {
   document.getElementById('total-pairs').textContent = `Total Pairs: ${totalPairs}`;
 };
 
+// Create the card element
 const createCard = (pokemonId) => {
   const card = document.createElement('div');
   card.classList.add('card');
@@ -72,7 +79,8 @@ const createCard = (pokemonId) => {
 
   return card;
 };
-  
+
+// Get random unique Pokémon IDs and return them as an array
 const getRandomUniquePokemons = (count) => {
   const uniquePokemons = new Set();
   while (uniquePokemons.size < count) {
@@ -81,6 +89,7 @@ const getRandomUniquePokemons = (count) => {
   return Array.from(uniquePokemons);
 };
 
+// Get the pokemons official artwork image from the API and set it as the front face of the card
 const fetchPokemonImage = async (pokemonId, frontFace) => {
   const response = await fetch(`${pokeApiBaseUrl}/pokemon/${pokemonId}`);
   const data = await response.json();
@@ -88,6 +97,7 @@ const fetchPokemonImage = async (pokemonId, frontFace) => {
   frontFace.src = pokemonImageUrl; 
 };
 
+// Get the total number of pokemon in the API and set it as the maxPokemonId
 const fetchMaxPokemonId = async () => {
   const response = await fetch(`${pokeApiBaseUrl}/pokemon-species?limit=1`);
   const data = await response.json();
@@ -97,10 +107,12 @@ const fetchMaxPokemonId = async () => {
   maxPokemonId = pokemonData.id;
 };
 
+// Get a random pokemon ID from one to the maxPokemonId
 const getRandomPokemonId = () => {
   return Math.floor(Math.random() * maxPokemonId) + 1; 
 };
 
+// Add event listeners to the cards and input elements
 const addEventListeners = () => {
   cards.forEach(card => {
     card.addEventListener('click', handleCardClick);
@@ -116,33 +128,42 @@ const addEventListeners = () => {
   });
 };
 
+// Handle card click event
 const handleCardClick = () => {
+  // Return early if the game is lost or the timer is not running
   if (timerId === undefined || gameLost) {
     return;
   }
 
+  // If the timer is not running, start it
   if (timerId === undefined) {
     timerId = setInterval(updateTimer, 1000);
   }
 
+  // If the clicked card is already matched, return early
   const clickedCard = event.currentTarget;
   if (clickedCard.classList.contains('matched')) {
     return;
   }
 
+  // If the clicked card is the same as the first or second card, return early
   if (clickedCard === firstCard || clickedCard === secondCard) {
     return;
   }
 
+  // If the first or second card is already selected, return early
   if (firstCard && secondCard) {
     return;
   }
 
+  // Flip the card
   clickedCard.classList.add('flip');
   clicks++;
 
+  // Update the number of clicks
   document.getElementById('clicks').textContent = `Clicks: ${clicks}`;
 
+  // Store the first and second card
   if (!firstCard) {
     firstCard = clickedCard;
   } else if (!secondCard) {
@@ -153,9 +174,12 @@ const handleCardClick = () => {
       pairsLeft--;
       document.getElementById('pairs-left').textContent = `Pairs Left: ${pairsLeft}`;
       document.getElementById('pairs-matched').textContent = `Pairs Matched: ${pairsMatched}`;
+
+      // Disable matched cards
       firstCard.removeEventListener('click', handleCardClick);
       secondCard.removeEventListener('click', handleCardClick);
 
+      // Check if the game is won
       if (pairsMatched === totalPairs) {
         clearInterval(timerId);
         timerId = undefined;
@@ -164,6 +188,7 @@ const handleCardClick = () => {
 
       resetSelectedCards();
     } else {
+      // Flip the cards back over after a short delay
       setTimeout(() => {
         firstCard.classList.remove('flip');
         secondCard.classList.remove('flip');
@@ -176,6 +201,7 @@ const handleCardClick = () => {
   }
 };
 
+// Check if two cards are a match based on their Pokémon ID
 const isMatch = () => {
   // Retrieve the Pokémon ID from the data attribute
   const firstCardPokemonId = parseInt(firstCard.dataset.pokemonId); 
@@ -190,17 +216,20 @@ const isMatch = () => {
   return match;
 };
 
+// Reset the first and second card
 const resetSelectedCards = () => {
   firstCard = null;
   secondCard = null;
 };
 
+// Update the timer to decrement from the total time
 const updateTimer = () => {
   time--;
   const minutes = Math.floor(time / 60);
   const seconds = time % 60;
   document.getElementById('timer').textContent = `Time: ${formatTime(minutes)}:${formatTime(seconds)}`;
 
+  // If time runs out, display the losing message
   if (time === 0) {
     clearInterval(timerId);
     timerId = undefined;
@@ -208,10 +237,12 @@ const updateTimer = () => {
   }
 };
 
+// Format the time to display as MM:SS
 const formatTime = time => {
   return time < 10 ? `0${time}` : time;
 };
 
+// Display the winning message and apply the win class
 const displayWinningMessage = () => {
   const message = document.getElementById('message');
   message.textContent = 'Congratulations! You won the game!';
@@ -219,6 +250,7 @@ const displayWinningMessage = () => {
   message.classList.add('win');
 };
 
+// Display the losing message and apply the loss class
 const displayLosingMessage = () => {
   gameLost = true;
 
@@ -233,12 +265,15 @@ const displayLosingMessage = () => {
   });
 };
 
+// Handle the start button click event
 const handleStartButtonClick = () => {
   // Disable the start button after clicking
   document.getElementById('start-btn').disabled = true; 
 
+  // Reset the game
   resetGame();
 
+  // Set the number of pairs and time based on the difficulty
   if (difficulty === 'easy') {
     totalPairs = 4;
     time = easyTimeLimit;
@@ -258,10 +293,12 @@ const handleStartButtonClick = () => {
   timerId = setInterval(updateTimer, 1000);
 };
 
+// Reset the game on the reset button click event
 const handleResetButtonClick = () => {
   resetGame();
 };
 
+// Reset the game by clearing the timer, resetting the time, and resetting the number of clicks
 const resetGame = () => {
   clearInterval(timerId);
   timerId = undefined;
@@ -271,6 +308,7 @@ const resetGame = () => {
   pairsMatched = 0;
   gameLost = false;
   
+  // Reset the DOM elements
   document.getElementById('game-grid').style.display = 'none'; 
   document.getElementById('clicks').textContent = `Clicks: ${clicks}`;
   document.getElementById('pairs-left').textContent = `Pairs Left: ${pairsLeft}`;
@@ -284,6 +322,7 @@ const resetGame = () => {
   resetSelectedCards();
 };
 
+// Change the difficulty based on the button selected
 const handleDifficultyChange = event => {
   difficulty = event.target.value;
 
@@ -301,9 +340,11 @@ const handleDifficultyChange = event => {
   resetGame();
 };
 
+// Change the theme based on the button selected
 const handleThemeChange = event => {
   theme = event.target.value;
   document.body.className = theme;
 };
 
+// Set up the web page
 document.addEventListener('DOMContentLoaded', setup);
